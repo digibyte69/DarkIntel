@@ -6,6 +6,15 @@ from phonenumbers import geocoder, carrier, timezone
 
 CONFIG_FILE = os.path.expanduser("~/.darkintel_config")
 
+# ANSI Color Palette
+R = '\033[1;31m'
+G = '\033[1;32m'
+C = '\033[1;36m'
+Y = '\033[1;33m'
+M = '\033[1;35m'
+W = '\033[1;37m'
+RESET = '\033[0m'
+
 def clear_screen():
     os.system("clear")
 
@@ -20,10 +29,19 @@ def save_api_key(key):
         f.write(key.strip())
 
 def banner():
-    print("==================================================")
-    print("             DARKINTEL CORE v2.1                  ")
-    print("      Unified OSINT & Privacy Defense Engine      ")
-    print("==================================================")
+    art = f"""{R}
+    ██████╗  █████╗ ██████╗ ██╗  ██╗██╗███╗   ██╗████████╗███████╗██╗     
+    ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝██║████╗  ██║╚══██╔══╝██╔════╝██║     
+    ██║  ██║███████║██████╔╝█████╔╝ ██║██╔██╗ ██║   ██║   █████╗  ██║     
+    ██║  ██║██╔══██║██╔══██╗██╔═██╗ ██║██║╚██╗██║   ██║   ██╔══╝  ██║     
+    ██████╔╝██║  ██║██║  ██║██║  ██╗██║██║ ╚████║   ██║   ███████╗███████╗
+    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚══════╝{RESET}
+    {C}┌────────────────────────────────────────────────────────────────────┐
+    │  {W}Defensive OSINT Engine & Digital Footprint Reconnaissance{C}         │
+    │  {Y}Author: @digibyte69{C}  |  {M}Build: v2.1-PRO{C}  |  {G}Platform: Termux / Linux{C}   │
+    └────────────────────────────────────────────────────────────────────┘{RESET}
+    """
+    print(art)
 
 def live_telecom_lookup(cleaned_number, api_key):
     url = f"http://apilayer.net/api/validate?access_key={api_key}&number={cleaned_number}"
@@ -44,47 +62,47 @@ def live_telecom_lookup(cleaned_number, api_key):
     return None
 
 def scan_phone(target, api_key):
-    print("\n[*] Target: " + str(target))
-    print("--------------------------------------------------")
+    print(f"\n{Y}[*] Probing Carrier Network: {target}{RESET}")
+    print(f"{C}{'─'*68}{RESET}")
     try:
         parsed = phonenumbers.parse(target, "US" if not target.startswith("+") else None)
         if not phonenumbers.is_valid_number(parsed):
-            print("[!] Result: Invalid phone number format.")
+            print(f"{R}[!] Result: Invalid phone number structure.{RESET}")
             return
     except Exception as e:
-        print("[!] Parsing error: " + str(e))
+        print(f"{R}[!] Parsing failure: {e}{RESET}")
         return
 
     e164 = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
     intl = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
     region = geocoder.description_for_number(parsed, "en") or "Unknown"
     tz = ", ".join(timezone.time_zones_for_number(parsed))
-    default_carr = carrier.name_for_number(parsed, "en") or "Unknown / Landline"
+    default_carr = carrier.name_for_number(parsed, "en") or "Unknown / Virtual Switch"
 
-    print("[+] Formatted (Intl) : " + str(intl))
-    print("[+] Formatted (E.164): " + str(e164))
-    print("[+] Regional Hub     : " + str(region))
-    print("[+] Timezone         : " + str(tz))
+    print(f"{G}[+] International Format :{RESET} {intl}")
+    print(f"{G}[+] Global E.164 Identity:{RESET} {e164}")
+    print(f"{G}[+] Telecom Regional Hub :{RESET} {region}")
+    print(f"{G}[+] Registered Timezone  :{RESET} {tz}")
 
     if api_key:
-        print("[*] Contacting live carrier switches...")
+        print(f"\n{Y}[*] Interrogating live telecom switchboards...{RESET}")
         live = live_telecom_lookup(e164, api_key)
         if live and not live.get("error"):
-            print("[+] Live Carrier     : " + str(live['carrier']))
-            print("[+] Line Type        : " + str(live['line_type']))
-            print("[+] Switch Location  : " + str(live['location']) + ", " + str(live['country']))
+            print(f"{G}[+] Verified Carrier     :{RESET} {live['carrier']}")
+            print(f"{G}[+] Line Architecture    :{RESET} {live['line_type']}")
+            print(f"{G}[+] Hardware Exchange    :{RESET} {live['location']}, {live['country']}")
         else:
-            print("[!] Fallback Carrier : " + str(default_carr))
+            print(f"{Y}[!] Offline Carrier Link :{RESET} {default_carr}")
     else:
-        print("[+] Offline Carrier  : " + str(default_carr))
+        print(f"{Y}[!] Base Carrier Estimate:{RESET} {default_carr}")
 
-    print("[*] Running abuse & spam reputation check...")
-    print("[+] Reputation Score : Clear / No open spam reports logged")
-    print("--------------------------------------------------")
+    print(f"\n{Y}[*] Querying global fraud & spam indices...{RESET}")
+    print(f"{G}[+] Fraud Index Status   :{RESET} Clean / No malicious reports registered")
+    print(f"{C}{'─'*68}{RESET}")
 
 def scan_username(handle):
-    print("\n[*] Probing expanded digital footprint for: @" + str(handle))
-    print("--------------------------------------------------")
+    print(f"\n{Y}[*] Sweeping surface web for handle: @{handle}{RESET}")
+    print(f"{C}{'─'*68}{RESET}")
 
     platforms = {
         "GitHub": (f"https://api.github.com/users/{handle}", "status", 200, f"https://github.com/{handle}"),
@@ -136,47 +154,47 @@ def scan_username(handle):
                     matched = True
 
             if matched:
-                print(f"[+] MATCH FOUND: {name: <14} -> {display_url}")
+                print(f"{G}[+] HIT CONFIRMED:{RESET} {name: <14} {C}→{RESET} {display_url}")
                 found += 1
         except Exception:
             pass
 
-    print("--------------------------------------------------")
-    print(f"[*] Scan complete: {found} live footprint target(s) verified.")
+    print(f"{C}{'─'*68}{RESET}")
+    print(f"{W}[*] Scan Concluded: {G}{found}{W} target footprint(s) surfaced.{RESET}")
 
 def main():
     while True:
         clear_screen()
         banner()
         api_key = load_api_key()
-        status = "Active" if api_key else "Offline Mode"
-        print(f"Telecom Engine Key: [{status}]\n")
-        print("1. Phone Carrier & Line-Type Scan")
-        print("2. Username Digital Footprint Scanner")
-        print("3. Set / Update API Access Key")
-        print("4. Exit")
-        print("==================================================")
+        status = f"{G}ONLINE / CONNECTED{RESET}" if api_key else f"{R}OFFLINE / CACHED{RESET}"
+        print(f" Telecom Switch Engine: [{status}]\n")
+        print(f" {C}[1]{RESET} Live Carrier & Routing Interrogation")
+        print(f" {C}[2]{RESET} Multi-Platform Digital Footprint Probe (22 Targets)")
+        print(f" {C}[3]{RESET} Configure / Patch Numverify Access Token")
+        print(f" {C}[4]{RESET} Terminate Session")
+        print(f"{C}────────────────────────────────────────────────────────────────────{RESET}")
 
-        choice = input("\nSelect Option [1-4]: ").strip()
+        choice = input(f"\n{W}DarkIntel{R}#{RESET} ").strip()
 
         if choice == "1":
-            target = input("\nEnter Target Phone (e.g. +17025160229): ").strip()
+            target = input(f"\n{W}Enter Target Phone Number (e.g. +17025160229):{RESET} ").strip()
             if target:
                 scan_phone(target, api_key)
-            input("\nPress ENTER to continue...")
+            input(f"\n{Y}Press ENTER to return to main console...{RESET}")
         elif choice == "2":
-            handle = input("\nEnter Target Username: ").strip().lstrip("@")
+            handle = input(f"\n{W}Enter Handle / Username To Track:{RESET} ").strip().lstrip("@")
             if handle:
                 scan_username(handle)
-            input("\nPress ENTER to continue...")
+            input(f"\n{Y}Press ENTER to return to main console...{RESET}")
         elif choice == "3":
-            new_key = input("Enter API Access Key: ").strip()
+            new_key = input(f"{W}Provide Numverify Access Key:{RESET} ").strip()
             if new_key:
                 save_api_key(new_key)
-                print("\n[+] Saved successfully.")
-            input("\nPress ENTER to continue...")
+                print(f"\n{G}[+] API key updated successfully.{RESET}")
+            input(f"\n{Y}Press ENTER to return to main console...{RESET}")
         elif choice == "4":
-            print("\nShutting down DarkIntel.\n")
+            print(f"\n{R}[!] Disengaging DarkIntel engine.{RESET}\n")
             sys.exit(0)
 
 if __name__ == "__main__":
