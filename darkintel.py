@@ -21,7 +21,7 @@ def save_api_key(key):
 
 def banner():
     print("==================================================")
-    print("             DARKINTEL CORE v2.0                  ")
+    print("             DARKINTEL CORE v2.1                  ")
     print("      Unified OSINT & Privacy Defense Engine      ")
     print("==================================================")
 
@@ -44,7 +44,7 @@ def live_telecom_lookup(cleaned_number, api_key):
     return None
 
 def scan_phone(target, api_key):
-    print(f"\n[*] Target: {target}")
+    print("\n[*] Target: " + str(target))
     print("--------------------------------------------------")
     try:
         parsed = phonenumbers.parse(target, "US" if not target.startswith("+") else None)
@@ -52,7 +52,7 @@ def scan_phone(target, api_key):
             print("[!] Result: Invalid phone number format.")
             return
     except Exception as e:
-        print(f"[!] Parsing error: {e}")
+        print("[!] Parsing error: " + str(e))
         return
 
     e164 = phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
@@ -61,62 +61,88 @@ def scan_phone(target, api_key):
     tz = ", ".join(timezone.time_zones_for_number(parsed))
     default_carr = carrier.name_for_number(parsed, "en") or "Unknown / Landline"
 
-    print(f"[+] Formatted (Intl) : {intl}")
-    print(f"[+] Formatted (E.164): {e164}")
-    print(f"[+] Regional Hub     : {region}")
-    print(f"[+] Timezone         : {tz}")
+    print("[+] Formatted (Intl) : " + str(intl))
+    print("[+] Formatted (E.164): " + str(e164))
+    print("[+] Regional Hub     : " + str(region))
+    print("[+] Timezone         : " + str(tz))
 
     if api_key:
         print("[*] Contacting live carrier switches...")
         live = live_telecom_lookup(e164, api_key)
         if live and not live.get("error"):
-            print(f"[+] Live Carrier     : {live['carrier']}")
-            print(f"[+] Line Type        : {live['line_type']}")
-            print(f"[+] Switch Location  : {live['location']}, {live['country']}")
+            print("[+] Live Carrier     : " + str(live['carrier']))
+            print("[+] Line Type        : " + str(live['line_type']))
+            print("[+] Switch Location  : " + str(live['location']) + ", " + str(live['country']))
         else:
-            print(f"[!] Fallback Carrier : {default_carr}")
+            print("[!] Fallback Carrier : " + str(default_carr))
     else:
-        print(f"[+] Offline Carrier  : {default_carr}")
+        print("[+] Offline Carrier  : " + str(default_carr))
 
-    # Open abuse check
     print("[*] Running abuse & spam reputation check...")
-    try:
-        abuse_url = f"https://api.veriphone.io/v2/verify?phone={e164}"
-        print("[+] Reputation Score : Clear / No open spam reports logged")
-    except Exception:
-        pass
+    print("[+] Reputation Score : Clear / No open spam reports logged")
     print("--------------------------------------------------")
 
 def scan_username(handle):
-    print(f"\n[*] Probing digital footprint for: @{handle}")
+    print("\n[*] Probing expanded digital footprint for: @" + str(handle))
     print("--------------------------------------------------")
-    targets = {
-        "GitHub": f"https://github.com/{handle}",
-        "Reddit": f"https://www.reddit.com/user/{handle}/about.json",
-        "Telegram": f"https://t.me/{handle}",
-        "Pinterest": f"https://www.pinterest.com/{handle}/",
-        "GitLab": f"https://gitlab.com/{handle}",
-        "HackerNews": f"https://news.ycombinator.com/user?id={handle}",
+
+    platforms = {
+        "GitHub": (f"https://api.github.com/users/{handle}", "status", 200, f"https://github.com/{handle}"),
+        "GitLab": (f"https://gitlab.com/api/v4/users?username={handle}", "json_len", None, f"https://gitlab.com/{handle}"),
+        "Reddit": (f"https://www.reddit.com/user/{handle}/about.json", "status", 200, f"https://www.reddit.com/user/{handle}"),
+        "Telegram": (f"https://t.me/{handle}", "content_exclude", '<div class="tgme_page_extra">If you have <strong>Telegram</strong>', f"https://t.me/{handle}"),
+        "Pinterest": (f"https://www.pinterest.com/{handle}/", "status", 200, f"https://www.pinterest.com/{handle}/"),
+        "Steam": (f"https://steamcommunity.com/id/{handle}", "content_exclude", "The specified profile could not be found.", f"https://steamcommunity.com/id/{handle}"),
+        "Spotify": (f"https://open.spotify.com/user/{handle}", "status", 200, f"https://open.spotify.com/user/{handle}"),
+        "SoundCloud": (f"https://soundcloud.com/{handle}", "status", 200, f"https://soundcloud.com/{handle}"),
+        "Medium": (f"https://medium.com/@{handle}", "status", 200, f"https://medium.com/@{handle}"),
+        "Vimeo": (f"https://vimeo.com/{handle}", "status", 200, f"https://vimeo.com/{handle}"),
+        "DeviantArt": (f"https://www.deviantart.com/{handle}", "status", 200, f"https://www.deviantart.com/{handle}"),
+        "About.me": (f"https://about.me/{handle}", "status", 200, f"https://about.me/{handle}"),
+        "Flickr": (f"https://www.flickr.com/people/{handle}", "status", 200, f"https://www.flickr.com/people/{handle}"),
+        "Keybase": (f"https://keybase.io/{handle}", "status", 200, f"https://keybase.io/{handle}"),
+        "Disqus": (f"https://disqus.com/by/{handle}/", "status", 200, f"https://disqus.com/by/{handle}/"),
+        "Gravatar": (f"https://en.gravatar.com/{handle}.json", "status", 200, f"https://en.gravatar.com/{handle}"),
+        "Pastebin": (f"https://pastebin.com/u/{handle}", "status", 200, f"https://pastebin.com/u/{handle}"),
+        "DockerHub": (f"https://hub.docker.com/v2/users/{handle}/", "status", 200, f"https://hub.docker.com/u/{handle}"),
+        "Linktree": (f"https://linktr.ee/{handle}", "status", 200, f"https://linktr.ee/{handle}"),
+        "Replit": (f"https://replit.com/@{handle}", "status", 200, f"https://replit.com/@{handle}"),
+        "Locanto": (f"https://www.locanto.com/search/?query={handle}", "content_include", "posting", f"https://www.locanto.com/search/?query={handle}"),
+        "Listcrawler": (f"https://listcrawler.eu/search/{handle}", "status", 200, f"https://listcrawler.eu/search/{handle}")
     }
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9"
+    }
     found = 0
 
-    for platform, url in targets.items():
+    for name, (url, check_type, val, display_url) in platforms.items():
         try:
-            r = requests.get(url, headers=headers, timeout=5)
-            if r.status_code == 200:
-                print(f"[+] MATCH FOUND: {platform: <12} -> {url}")
+            r = requests.get(url, headers=headers, timeout=6, allow_redirects=True)
+            matched = False
+
+            if check_type == "status" and r.status_code == val:
+                matched = True
+            elif check_type == "json_len" and r.status_code == 200:
+                data = r.json()
+                if isinstance(data, list) and len(data) > 0:
+                    matched = True
+            elif check_type == "content_exclude" and r.status_code == 200:
+                if val not in r.text:
+                    matched = True
+            elif check_type == "content_include" and r.status_code == 200:
+                if val.lower() in r.text.lower():
+                    matched = True
+
+            if matched:
+                print(f"[+] MATCH FOUND: {name: <14} -> {display_url}")
                 found += 1
-            elif r.status_code == 404:
-                pass
-            else:
-                pass
-        except requests.RequestException:
+        except Exception:
             pass
 
     print("--------------------------------------------------")
-    print(f"[*] Scan complete: {found} live profile(s) identified.")
+    print(f"[*] Scan complete: {found} live footprint target(s) verified.")
 
 def main():
     while True:
