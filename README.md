@@ -1,0 +1,14 @@
+# DarkIntel Core
+
+A lightweight, terminal-based OSINT telecom verification and digital footprint recon utility built for Android/Termux environments.
+
+## Features
+- **Live Carrier & Switch Routing**: Live carrier lookup, line-type verification (Mobile, Landline, VoIP), and rate center tracking via Numverify API integration.
+- **Digital Footprint Scanner**: Multi-platform username recon across public developer and social network profiles.
+- **Abuse & Reputation Scoring**: Basic heuristic reporting flags for suspicious numbers.
+
+## Setup & Usage
+```bash
+pip install requests phonenumbers
+python darkintel.py
+
